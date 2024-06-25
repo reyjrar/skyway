@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <h1>{% block title %}Skyway Bill Analysis{% endblock %}</h1>
+
+    <p>Select the account you're interested in</p>
+
+    <ul id="accounts">
+    </ul>
+
+    <template id="accountTmpl">
+        <li><a class="link"></a></li>
+    </template>
+
+    <script type="text/javascript">
+        window.addEventListener('DOMContentLoaded',function () {
+            const baseLink = "{{ url_for('account', account_id=0 )}}";
+            fetch("{{ url_for('accounts')}}")
+                .then((response) => response.json())
+                .then((json) => {
+                    const linkTmpl = document.getElementById('accountTmpl');
+                    const accounts = document.getElementById('accounts');
+                    for (const [id,details] of Object.entries(json)) {
+                        var item = linkTmpl.content.cloneNode(true).firstElementChild;
+                        accounts.append(item);
+                        var link = item.querySelector(':scope a');
+                        var re = /0$/;
+                        link.href = baseLink.replace(re, id);
+                        link.innerText = id;
+                    }
+                })
+        });
+    </script>
+{% endblock %}

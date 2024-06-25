@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <style>
+    #discountOverview th {
+        text-align: right;
+        padding-right: 2em;
+    }
+    .discount {
+        color: green;
+    }
+    .percent:after {
+        content: " %";
+    }
+    .money:before {
+        content: "$ ";
+    }
+    .large td, th {
+        font-size: 16pt;
+    }
+    .undiscounted {
+        .discounted_total {
+            color: red;
+        }
+    }
+    .discounted {
+        .discounted_total {
+            color: green;
+        }
+    }
+    </style>
+
+    <h1>{% block title %}Skyway Bill Analysis {{ account_id }} Invoice {{ invoice_id }}{% endblock %}</h1>
+
+    <h2>Blended Discount: <span class="percent discount" id="discount_rate"></span></h2>
+
+    <table id="discountOverview" class="large">
+        <tr>
+            <th>Undiscounted Total</th>
+            <td class="money" id="total_undiscounted"></td>
+        </tr>
+        <tr>
+            <th>Discounted Total</th>
+            <td class="money" id="total_discounted"></td>
+        </tr>
+    </table>
+
+    <h2>Product Usage Overview</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Product Code</th>
+                <th>Gross Total</th>
+                <th>Discounted Total</th>
+            </tr>
+        </thead>
+        <tbody id="products">
+        </tbody>
+    </table>
+
+    <template id="productTmpl">
+        <tr class="undiscounted">
+            <td class="product"></td>
+            <td class="money undiscounted_total" style="text-align: right"></td>
+            <td class="money discounted_total" style="text-align: right"></td>
+        </tr>
+    </template>
+
+    <script type="text/javascript">
+        // Found on StackOverflow, using bankers rounding is probably what billing companies do
+        function bankers_round(n, d=0) {
+            var x = n * Math.pow(10, d);
+            var r = Math.round(x);
+            var br = (((((x>0)?x:(-x))%1)===0.5)?(((0===(r%2)))?r:(r-1)):r);
+            return br / Math.pow(10, d);
+        }
+
+        window.addEventListener('DOMContentLoaded',function () {
+            var productTmpl = document.getElementById('productTmpl');
+            var productTbl  = document.getElementById('products');
+            fetch("{{ url_for('invoicetotals', invoice_id=invoice_id)}}")
+                .then((response) => response.json())
+                .then((json) => {
+                    var ut = document.getElementById('total_undiscounted');
+                    ut.innerText = bankers_round(json['undiscounted_total'], 2)
+                    var dt = document.getElementById('total_discounted');
+                    dt.innerText = bankers_round(json['discounted_total'], 2)
+                    var dr = document.getElementById('discount_rate');
+                    dr.innerText = bankers_round(json['blended_discount_rate'] * 100, 2)
+                });
+
+            fetch("{{ url_for('invoiceproducts', invoice_id=invoice_id)}}")
+                .then((response) => response.json())
+                .then((json) => {
+                    for (const [code,details] of Object.entries(json['products'])) {
+                        var row = productTmpl.content.cloneNode(true).firstElementChild;
+                        if ( details['undiscounted_total'] != details['discounted_total'] ) {
+                            row.classList.replace('undiscounted', 'discounted');
+                        }
+                        var product = row.querySelector(':scope > .product');
+                        product.innerText = code;
+                        for (const [name,value] of Object.entries(details)) {
+                            var elm = row.querySelector(':scope > .' + name);
+                            elm.innerText = bankers_round(value,2);
+                        }
+
+                        productTbl.append(row);
+                    }
+                })
+        });
+    </script>
+{% endblock %}

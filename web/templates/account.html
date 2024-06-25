@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <h1>{% block title %}Skyway Bill Analysis for: {{ account_id }}{% endblock %}</h1>
+
+    <h2>Invoices for Account #{{ account_id }}</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>End Date</th>
+                <th>Invoice ID</th>
+            </tr>
+        </thead>
+        <tbody id="invoices">
+        </tbody>
+    </table>
+
+    <template id="invoiceTmpl">
+        <tr>
+            <td class="date"></td>>
+            <td><a class="link"></a></td>
+        </tr>
+    </template>
+
+    <script type="text/javascript">
+        window.addEventListener('DOMContentLoaded',function () {
+            fetch("{{ url_for('invoices', account_id=account_id )}}")
+                .then((response) => response.json())
+                .then((json) => {
+                    const linkTmpl = document.getElementById('invoiceTmpl');
+                    const invoices = document.getElementById('invoices');
+                    json.forEach((invoice) => {
+                        var row = linkTmpl.content.cloneNode(true).firstElementChild;
+                        var link = row.querySelector(':scope .link');
+                        link.href = "/account/{{ account_id }}/invoice/" + invoice['invoice_id'];
+                        link.innerText = invoice['invoice_id'];
+                        var date = row.querySelector(':scope .date');
+                        date.innerText = invoice['end_date'];
+                        invoices.append(row);
+                    })
+                })
+        });
+    </script>
+{% endblock %}
