@@ -12,4 +12,4 @@ if [ -z "$VIRTUAL_ENV" ]; then
     source bin/activate
 fi
 
-python3 web/app.py
+${PYTHON:=python3.12} web/app.py

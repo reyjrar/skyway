@@ -5,5 +5,5 @@ services:
     ports:
       - "8123:8123"
     volumes:
-      - ./chdata:/var/lib/clickhouse
-      - ./import:/var/lib/clickhouse/user_files
+      - ./chdata:/var/lib/clickhouse:Z
+      - ./import:/var/lib/clickhouse/user_files:Z
